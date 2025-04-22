@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useAppStore } from "@/store";
-import { executeScripts } from "@/utils/animationExecutor";
+import { useAnimationExecution } from "@/hooks/useAnimationExecution";
 import { Button } from "@/components/ui/button";
 import { Play, Square, RefreshCw } from "lucide-react";
 
@@ -14,8 +14,7 @@ export const PlayControls = () => {
     (state) => state.updateSpritePosition
   );
   const updateSpriteAngle = useAppStore((state) => state.updateSpriteAngle);
-  const setSpriteMessage = useAppStore((state) => state.setSpriteMessage);
-  const checkCollisions = useAppStore((state) => state.checkCollisions);
+  const { executeScripts } = useAnimationExecution();
 
   // Execute scripts for all sprites
   const handlePlay = async () => {
@@ -27,14 +26,7 @@ export const PlayControls = () => {
     try {
       // Execute scripts for each sprite in parallel
       await Promise.all(
-        sprites.map((sprite) =>
-          executeScripts(sprite.id, sprite.scripts, sprite, {
-            updateSpritePosition,
-            updateSpriteAngle,
-            setSpriteMessage,
-            checkCollisions,
-          })
-        )
+        sprites.map((sprite) => executeScripts(sprite.id, sprite.scripts))
       );
     } catch (err) {
       console.error("Error executing scripts:", err);

@@ -1,4 +1,3 @@
-
 export type Position = {
   x: number;
   y: number;
@@ -14,7 +13,7 @@ export type SpriteType = {
   angle: number;
   messages: {
     text: string;
-    type: 'say' | 'think';
+    type: "say" | "think";
     duration: number;
     visible: boolean;
     timeoutId?: number;
@@ -22,13 +21,23 @@ export type SpriteType = {
   scripts: BlockType[];
 };
 
-export type BlockCategory = 'motion' | 'looks' | 'control';
+export type BlockCategory = "motion" | "looks" | "control";
+
+export type BlockParams = {
+  steps?: number;
+  degrees?: number;
+  x?: number;
+  y?: number;
+  text?: string;
+  duration?: number;
+  times?: number;
+};
 
 export type BlockType = {
   id: string;
   type: string;
   category: BlockCategory;
-  params: Record<string, any>;
+  params: BlockParams;
   children?: BlockType[];
 };
 
@@ -38,8 +47,8 @@ export type BlockDefinition = {
   label: string;
   paramFields?: {
     name: string;
-    type: 'number' | 'text';
-    default: any;
+    type: "number" | "text";
+    default: string | number;
     label?: string;
   }[];
   hasChildren?: boolean;

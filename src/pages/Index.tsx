@@ -9,7 +9,7 @@ import ScratchLogo from '@/components/ScratchLogo';
 const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-     
+      {/* Header */}
       <header className="bg-blue-500 text-white p-4 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
           <ScratchLogo />
@@ -17,9 +17,9 @@ const Index = () => {
         </div>
       </header>
       
-      
+      {/* Main Content */}
       <main className="container mx-auto flex-1 p-4 flex flex-col gap-4">
-        
+        {/* Stage and Sprites Panel */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-3">
             <Stage />
@@ -29,7 +29,7 @@ const Index = () => {
           </div>
         </div>
         
-        
+        {/* Blocks and Script Area */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-80">
           <div className="h-full">
             <BlockPalette />
@@ -40,7 +40,7 @@ const Index = () => {
         </div>
       </main>
       
-      
+      {/* Footer */}
       <footer className="bg-gray-100 p-4 border-t">
         <div className="container mx-auto text-center text-gray-500 text-sm">
           Scratch-like Editor - Built with React and TypeScript

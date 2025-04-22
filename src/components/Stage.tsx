@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { Sprite } from "./Sprite";
 import { useAppStore } from "@/store";
 import { Position } from "@/types";
+import { STAGE_WIDTH, STAGE_HEIGHT } from "@/utils/sprite";
 
 export const Stage = () => {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -37,8 +38,22 @@ export const Stage = () => {
 
       if (stageRef.current) {
         const stageRect = stageRef.current.getBoundingClientRect();
-        const x = e.clientX - stageRect.left - dragOffset.x;
-        const y = e.clientY - stageRect.top - dragOffset.y;
+        const sprite = sprites.find((s) => s.id === draggedSpriteId);
+        if (!sprite) return;
+
+        // Calculate new position
+        let x = e.clientX - stageRect.left - dragOffset.x;
+        let y = e.clientY - stageRect.top - dragOffset.y;
+
+        // Enforce stage boundaries
+        x = Math.max(
+          sprite.width / 2,
+          Math.min(x, STAGE_WIDTH - sprite.width / 2)
+        );
+        y = Math.max(
+          sprite.height / 2,
+          Math.min(y, STAGE_HEIGHT - sprite.height / 2)
+        );
 
         updateSpritePosition(draggedSpriteId, { x, y });
       }
@@ -57,7 +72,7 @@ export const Stage = () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [draggedSpriteId, dragOffset, isPlaying, updateSpritePosition]);
+  }, [draggedSpriteId, dragOffset, isPlaying, updateSpritePosition, sprites]);
 
   // Check for collisions while playing
   useEffect(() => {
@@ -93,7 +108,7 @@ export const Stage = () => {
     <div
       ref={stageRef}
       className="bg-white rounded-lg shadow-md overflow-hidden relative"
-      style={{ height: "500px" }}
+      style={{ width: STAGE_WIDTH, height: STAGE_HEIGHT }}
       onClick={handleStageClick}
     >
       {/* Stage background */}

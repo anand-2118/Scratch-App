@@ -3,13 +3,41 @@ import { nanoid } from "nanoid";
 import { BlockType, SpriteType, Position } from "@/types";
 import { checkSpriteCollision } from "@/utils/sprite";
 
+interface BlockDefinition {
+  type: string;
+  category: string;
+  label: string;
+  paramFields: Array<{
+    name: string;
+    type: string;
+    default: number | string;
+  }>;
+  hasChildren?: boolean;
+}
+
+export type StoreState = {
+  sprites: SpriteType[];
+  selectedSpriteId: string | null;
+  isPlaying: boolean;
+  blockDefinitions: Record<string, BlockDefinition>;
+  updateSpritePosition: (id: string, position: Position) => void;
+  updateSpriteAngle: (id: string, angle: number) => void;
+  setSpriteMessage: (
+    id: string,
+    text: string,
+    type: "say" | "think",
+    duration: number
+  ) => void;
+  checkCollisions: () => void;
+};
+
 interface AppState {
   sprites: SpriteType[];
   selectedSpriteId: string | null;
   isPlaying: boolean;
-  blockDefinitions: Record<string, any>;
+  blockDefinitions: Record<string, BlockDefinition>;
 
- 
+  // Sprite Actions
   addSprite: (sprite: Partial<SpriteType>) => void;
   removeSprite: (id: string) => void;
   selectSprite: (id: string) => void;
@@ -22,19 +50,19 @@ interface AppState {
     duration: number
   ) => void;
 
- 
+  // Script Actions
   addBlockToSprite: (spriteId: string, block: BlockType) => void;
   removeBlockFromSprite: (spriteId: string, blockId: string) => void;
   updateBlockParams: (
     spriteId: string,
     blockId: string,
-    params: Record<string, any>
+    params: Record<string, number | string>
   ) => void;
 
-  
+  // Playback Actions
   setPlaying: (isPlaying: boolean) => void;
 
-  
+  // Collision detection
   checkCollisions: () => void;
   swapAnimations: (spriteId1: string, spriteId2: string) => void;
 }
@@ -56,10 +84,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedSpriteId: defaultCat.id,
   isPlaying: false,
   blockDefinitions: {
-    moveSteps: {
-      type: "moveSteps",
+    moveVertical: {
+      type: "moveVertical",
       category: "motion",
-      label: "Move ____ steps",
+      label: "Move ____ steps vertically",
+      paramFields: [{ name: "steps", type: "number", default: 10 }],
+    },
+    moveHorizontal: {
+      type: "moveHorizontal",
+      category: "motion",
+      label: "Move ____ steps horizontally",
       paramFields: [{ name: "steps", type: "number", default: 10 }],
     },
     turnDegrees: {
@@ -82,6 +116,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       category: "control",
       label: "Repeat",
       hasChildren: true,
+      paramFields: [{ name: "times", type: "number", default: 10 }],
     },
     say: {
       type: "say",
@@ -140,11 +175,28 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectSprite: (id) => set({ selectedSpriteId: id }),
 
   updateSpritePosition: (id, position) =>
-    set((state) => ({
-      sprites: state.sprites.map((sprite) =>
-        sprite.id === id ? { ...sprite, position } : sprite
-      ),
-    })),
+    set((state) => {
+      // Get the current sprite
+      const currentSprite = state.sprites.find((s) => s.id === id);
+      if (!currentSprite) return state;
+
+      // Create a new position object to ensure immutability
+      const newPosition = { ...position };
+
+      // Update the sprite with the new position
+      const updatedSprites = state.sprites.map((sprite) =>
+        sprite.id === id
+          ? {
+              ...sprite,
+              position: newPosition,
+            }
+          : sprite
+      );
+
+      return {
+        sprites: updatedSprites,
+      };
+    }),
 
   updateSpriteAngle: (id, angle) =>
     set((state) => ({
@@ -155,7 +207,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setSpriteMessage: (id, text, type, duration) =>
     set((state) => {
-      
+      // Clear any existing timeout for this sprite
       const sprite = state.sprites.find((s) => s.id === id);
       if (sprite) {
         sprite.messages.forEach((msg) => {
@@ -238,17 +290,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   checkCollisions: () => {
     const { sprites, swapAnimations } = get();
 
-    
+    // Check for collisions between sprites
     for (let i = 0; i < sprites.length; i++) {
       for (let j = i + 1; j < sprites.length; j++) {
         const sprite1 = sprites[i];
         const sprite2 = sprites[j];
 
         if (checkSpriteCollision(sprite1, sprite2)) {
-          
+          // Collision detected! Swap their animations
           swapAnimations(sprite1.id, sprite2.id);
 
-          
+          // Log collision for debugging
           console.log(
             `Collision detected between ${sprite1.name} and ${sprite2.name}!`
           );
@@ -265,7 +317,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       if (!sprite1 || !sprite2) return state;
 
-      
+      // Swap their scripts
       const scripts1 = [...sprite1.scripts];
       const scripts2 = [...sprite2.scripts];
 
@@ -281,3 +333,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       };
     }),
 }));
+
+// Create a store API for animation execution
+export const getStoreApi = () => {
+  const store = useAppStore.getState();
+  return {
+    getState: () => ({
+      ...store,
+      updateSpritePosition: store.updateSpritePosition,
+      updateSpriteAngle: store.updateSpriteAngle,
+      setSpriteMessage: store.setSpriteMessage,
+      checkCollisions: store.checkCollisions,
+    }),
+    setState: useAppStore.setState,
+    subscribe: useAppStore.subscribe,
+    getInitialState: useAppStore.getState,
+  };
+};
